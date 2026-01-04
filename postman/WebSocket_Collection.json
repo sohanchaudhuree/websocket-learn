@@ -1,0 +1,271 @@
+{
+  "info": {
+    "_postman_id": "websocket-collection-001",
+    "name": "WebSocket Chat - WebSocket Testing",
+    "description": "WebSocket testing collection for the WebSocket Chat Application.\n\n## Important Note:\nPostman's WebSocket support is available in Postman v8.0+. Use the WebSocket request type (not HTTP).\n\n## How to Test WebSocket:\n\n### Option 1: Using Postman (v8.0+)\n1. Click 'New' → 'WebSocket Request'\n2. Enter URL: `ws://localhost:3000/ws?token=YOUR_JWT_TOKEN`\n3. Click 'Connect'\n4. Send messages from the 'Message' tab\n\n### Option 2: Using wscat (Command Line)\n```bash\nnpm install -g wscat\nwscat -c \"ws://localhost:3000/ws?token=YOUR_JWT_TOKEN\"\n```\n\n### Option 3: Using Browser DevTools\nOpen browser console and run:\n```javascript\nconst ws = new WebSocket('ws://localhost:3000/ws?token=YOUR_JWT_TOKEN');\nws.onopen = () => console.log('Connected');\nws.onmessage = (e) => console.log('Received:', JSON.parse(e.data));\nws.onerror = (e) => console.error('Error:', e);\nws.onclose = (e) => console.log('Closed:', e.code);\n```\n\n## Message Format:\nAll messages should be valid JSON with the following structure:\n```json\n{\n  \"type\": \"message_type\",\n  \"data\": {\n    // message-specific data\n  }\n}\n```",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "WebSocket Connection",
+      "item": [
+        {
+          "name": "Connect to WebSocket",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "ws://localhost:3000/ws?token={{token}}",
+              "protocol": "ws",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["ws"],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "description": "JWT token obtained from login/register"
+                }
+              ]
+            },
+            "description": "## WebSocket Connection\n\nConnect to the WebSocket server.\n\n### URL\n```\nws://localhost:3000/ws?token=YOUR_JWT_TOKEN\n```\n\n### Authentication\nThe JWT token must be passed as a query parameter.\n\n### Expected Response\nUpon successful connection, you will receive:\n```json\n{\n  \"type\": \"connection_established\",\n  \"data\": {\n    \"message\": \"Connected to chat server\",\n    \"userId\": \"507f1f77bcf86cd799439011\",\n    \"username\": \"testuser\"\n  }\n}\n```\n\nFollowed by:\n```json\n{\n  \"type\": \"online_users\",\n  \"data\": {\n    \"users\": [...],\n    \"totalOnline\": 2,\n    \"timestamp\": \"2024-01-01T00:00:00.000Z\"\n  }\n}\n```\n\n### Connection Errors\n- 4001: No token provided\n- 4002: Invalid token\n- 4003: User not found\n- 4004: Server error\n- 4005: New connection established (old connection closed)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Message Templates",
+      "description": "Copy these JSON templates to send via WebSocket",
+      "item": [
+        {
+          "name": "Send Chat Message",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## Send Chat Message\n\nSend a message to another user.\n\n### Message Format\n```json\n{\n  \"type\": \"chat_message\",\n  \"data\": {\n    \"receiverId\": \"507f1f77bcf86cd799439011\",\n    \"content\": \"Hello! How are you?\",\n    \"messageType\": \"text\"\n  }\n}\n```\n\n### Fields\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| receiverId | string | Yes | Recipient's user ID |\n| content | string | Yes | Message content |\n| messageType | string | No | 'text', 'image', or 'file' (default: 'text') |\n\n### Response\nSender receives:\n```json\n{\n  \"type\": \"message_sent\",\n  \"data\": {\n    \"messageId\": \"507f1f77bcf86cd799439012\",\n    \"receiverId\": \"507f1f77bcf86cd799439011\",\n    \"content\": \"Hello! How are you?\",\n    \"createdAt\": \"2024-01-01T12:00:00.000Z\",\n    \"status\": \"sent\"\n  }\n}\n```\n\nIf receiver is online, sender also receives:\n```json\n{\n  \"type\": \"message_delivered\",\n  \"data\": {\n    \"messageId\": \"507f1f77bcf86cd799439012\",\n    \"deliveredAt\": \"2024-01-01T12:00:01.000Z\"\n  }\n}\n```\n\nReceiver receives:\n```json\n{\n  \"type\": \"new_message\",\n  \"data\": {\n    \"messageId\": \"507f1f77bcf86cd799439012\",\n    \"senderId\": \"507f1f77bcf86cd799439010\",\n    \"senderUsername\": \"john_doe\",\n    \"content\": \"Hello! How are you?\",\n    \"messageType\": \"text\",\n    \"createdAt\": \"2024-01-01T12:00:00.000Z\"\n  }\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Start Typing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## Start Typing Indicator\n\nNotify another user that you started typing.\n\n### Message Format\n```json\n{\n  \"type\": \"typing_start\",\n  \"data\": {\n    \"receiverId\": \"507f1f77bcf86cd799439011\"\n  }\n}\n```\n\n### Response\nReceiver receives:\n```json\n{\n  \"type\": \"typing_indicator\",\n  \"data\": {\n    \"userId\": \"507f1f77bcf86cd799439010\",\n    \"username\": \"john_doe\",\n    \"isTyping\": true\n  }\n}\n```\n\n### Usage Tips\n- Send this when user starts typing in the input field\n- Don't send repeatedly, only when typing starts\n- Follow up with `typing_stop` when user stops typing or sends message"
+          },
+          "response": []
+        },
+        {
+          "name": "Stop Typing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## Stop Typing Indicator\n\nNotify another user that you stopped typing.\n\n### Message Format\n```json\n{\n  \"type\": \"typing_stop\",\n  \"data\": {\n    \"receiverId\": \"507f1f77bcf86cd799439011\"\n  }\n}\n```\n\n### Response\nReceiver receives:\n```json\n{\n  \"type\": \"typing_indicator\",\n  \"data\": {\n    \"userId\": \"507f1f77bcf86cd799439010\",\n    \"username\": \"john_doe\",\n    \"isTyping\": false\n  }\n}\n```\n\n### Usage Tips\n- Send this after 2-3 seconds of inactivity\n- Send this immediately after sending a message\n- The receiver's UI should hide the typing indicator"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Messages as Read",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## Mark Messages as Read\n\nMark all messages from a specific user as read.\n\n### Message Format\n```json\n{\n  \"type\": \"mark_read\",\n  \"data\": {\n    \"senderId\": \"507f1f77bcf86cd799439010\"\n  }\n}\n```\n\n### Response\nCurrent user receives confirmation:\n```json\n{\n  \"type\": \"mark_read_success\",\n  \"data\": {\n    \"senderId\": \"507f1f77bcf86cd799439010\",\n    \"markedCount\": 5\n  }\n}\n```\n\nThe sender receives notification:\n```json\n{\n  \"type\": \"messages_read\",\n  \"data\": {\n    \"readBy\": \"507f1f77bcf86cd799439011\",\n    \"readByUsername\": \"jane_doe\",\n    \"readAt\": \"2024-01-01T12:05:00.000Z\"\n  }\n}\n```\n\n### Usage Tips\n- Call this when user opens a conversation\n- Call this when new messages arrive in current conversation"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Online Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## Request Online Users List\n\nRequest the current list of online users.\n\n### Message Format\n```json\n{\n  \"type\": \"get_online_users\",\n  \"data\": {}\n}\n```\n\n### Response\n```json\n{\n  \"type\": \"online_users\",\n  \"data\": {\n    \"users\": [\n      {\n        \"_id\": \"507f1f77bcf86cd799439010\",\n        \"username\": \"john_doe\",\n        \"avatar\": null\n      },\n      {\n        \"_id\": \"507f1f77bcf86cd799439011\",\n        \"username\": \"jane_doe\",\n        \"avatar\": \"https://example.com/avatar.jpg\"\n      }\n    ],\n    \"totalOnline\": 2,\n    \"timestamp\": \"2024-01-01T12:00:00.000Z\"\n  }\n}\n```\n\n### Note\nYou also receive `online_users` automatically:\n- On initial connection\n- When any user comes online or goes offline"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Server Events (Received)",
+      "description": "Documentation of messages you may receive from the server",
+      "item": [
+        {
+          "name": "connection_established",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## Connection Established Event\n\nReceived immediately after successful WebSocket connection.\n\n### Format\n```json\n{\n  \"type\": \"connection_established\",\n  \"data\": {\n    \"message\": \"Connected to chat server\",\n    \"userId\": \"507f1f77bcf86cd799439011\",\n    \"username\": \"testuser\"\n  }\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "online_users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## Online Users Event\n\nReceived when the online users list changes.\n\n### Format\n```json\n{\n  \"type\": \"online_users\",\n  \"data\": {\n    \"users\": [\n      {\n        \"_id\": \"507f1f77bcf86cd799439010\",\n        \"username\": \"john_doe\",\n        \"avatar\": null\n      }\n    ],\n    \"totalOnline\": 1,\n    \"timestamp\": \"2024-01-01T12:00:00.000Z\"\n  }\n}\n```\n\n### When Received\n- On initial connection\n- When any user comes online\n- When any user goes offline"
+          },
+          "response": []
+        },
+        {
+          "name": "user_online",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## User Online Event\n\nReceived when another user comes online.\n\n### Format\n```json\n{\n  \"type\": \"user_online\",\n  \"data\": {\n    \"userId\": \"507f1f77bcf86cd799439010\",\n    \"username\": \"john_doe\",\n    \"timestamp\": \"2024-01-01T12:00:00.000Z\"\n  }\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "user_offline",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## User Offline Event\n\nReceived when another user goes offline.\n\n### Format\n```json\n{\n  \"type\": \"user_offline\",\n  \"data\": {\n    \"userId\": \"507f1f77bcf86cd799439010\",\n    \"username\": \"john_doe\",\n    \"timestamp\": \"2024-01-01T12:00:00.000Z\"\n  }\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "new_message",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## New Message Event\n\nReceived when someone sends you a message.\n\n### Format\n```json\n{\n  \"type\": \"new_message\",\n  \"data\": {\n    \"messageId\": \"507f1f77bcf86cd799439012\",\n    \"senderId\": \"507f1f77bcf86cd799439010\",\n    \"senderUsername\": \"john_doe\",\n    \"content\": \"Hello! How are you?\",\n    \"messageType\": \"text\",\n    \"createdAt\": \"2024-01-01T12:00:00.000Z\"\n  }\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "typing_indicator",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## Typing Indicator Event\n\nReceived when someone starts or stops typing to you.\n\n### Format\n```json\n{\n  \"type\": \"typing_indicator\",\n  \"data\": {\n    \"userId\": \"507f1f77bcf86cd799439010\",\n    \"username\": \"john_doe\",\n    \"isTyping\": true\n  }\n}\n```\n\n### UI Implementation\n- Show \"john_doe is typing...\" when `isTyping: true`\n- Hide indicator when `isTyping: false`\n- Auto-hide after 3-5 seconds if no update received"
+          },
+          "response": []
+        },
+        {
+          "name": "messages_read",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## Messages Read Event\n\nReceived when someone reads your messages.\n\n### Format\n```json\n{\n  \"type\": \"messages_read\",\n  \"data\": {\n    \"readBy\": \"507f1f77bcf86cd799439011\",\n    \"readByUsername\": \"jane_doe\",\n    \"readAt\": \"2024-01-01T12:05:00.000Z\"\n  }\n}\n```\n\n### UI Implementation\n- Update message status indicators (e.g., double checkmarks)\n- Show \"Seen\" timestamp in conversation"
+          },
+          "response": []
+        },
+        {
+          "name": "error",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## Error Event\n\nReceived when an error occurs.\n\n### Format\n```json\n{\n  \"type\": \"error\",\n  \"data\": {\n    \"message\": \"Error description\",\n    \"timestamp\": \"2024-01-01T12:00:00.000Z\"\n  }\n}\n```\n\n### Common Errors\n- \"Missing required fields: receiverId and content\"\n- \"Cannot send message to yourself\"\n- \"Invalid message format. Please send valid JSON.\"\n- \"Unknown message type: xyz\""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Testing Scripts",
+      "description": "JavaScript code snippets for testing WebSocket",
+      "item": [
+        {
+          "name": "Browser Console Test Script",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## Browser Console Test Script\n\nCopy and paste this into your browser's developer console:\n\n```javascript\n// Replace with your actual token\nconst TOKEN = 'YOUR_JWT_TOKEN';\n\n// Connect to WebSocket\nconst ws = new WebSocket(`ws://localhost:3000/ws?token=${TOKEN}`);\n\n// Connection opened\nws.onopen = () => {\n  console.log('✅ Connected to WebSocket');\n};\n\n// Listen for messages\nws.onmessage = (event) => {\n  const message = JSON.parse(event.data);\n  console.log(`📨 ${message.type}:`, message.data);\n};\n\n// Connection closed\nws.onclose = (event) => {\n  console.log(`❌ Disconnected: ${event.code} ${event.reason}`);\n};\n\n// Connection error\nws.onerror = (error) => {\n  console.error('🔥 Error:', error);\n};\n\n// Helper functions\nwindow.sendMessage = (receiverId, content) => {\n  ws.send(JSON.stringify({\n    type: 'chat_message',\n    data: { receiverId, content }\n  }));\n  console.log('📤 Message sent');\n};\n\nwindow.startTyping = (receiverId) => {\n  ws.send(JSON.stringify({\n    type: 'typing_start',\n    data: { receiverId }\n  }));\n};\n\nwindow.stopTyping = (receiverId) => {\n  ws.send(JSON.stringify({\n    type: 'typing_stop',\n    data: { receiverId }\n  }));\n};\n\nwindow.markRead = (senderId) => {\n  ws.send(JSON.stringify({\n    type: 'mark_read',\n    data: { senderId }\n  }));\n};\n\nwindow.getOnlineUsers = () => {\n  ws.send(JSON.stringify({\n    type: 'get_online_users',\n    data: {}\n  }));\n};\n\nwindow.disconnect = () => ws.close();\n\nconsole.log('\\n📝 Available commands:');\nconsole.log('sendMessage(receiverId, content)');\nconsole.log('startTyping(receiverId)');\nconsole.log('stopTyping(receiverId)');\nconsole.log('markRead(senderId)');\nconsole.log('getOnlineUsers()');\nconsole.log('disconnect()');\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "wscat Commands",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## wscat Command Line Testing\n\n### Installation\n```bash\nnpm install -g wscat\n```\n\n### Connect\n```bash\nwscat -c \"ws://localhost:3000/ws?token=YOUR_JWT_TOKEN\"\n```\n\n### Send Messages (copy these after connecting)\n\n**Send a chat message:**\n```json\n{\"type\":\"chat_message\",\"data\":{\"receiverId\":\"USER_ID\",\"content\":\"Hello!\"}}\n```\n\n**Start typing:**\n```json\n{\"type\":\"typing_start\",\"data\":{\"receiverId\":\"USER_ID\"}}\n```\n\n**Stop typing:**\n```json\n{\"type\":\"typing_stop\",\"data\":{\"receiverId\":\"USER_ID\"}}\n```\n\n**Mark as read:**\n```json\n{\"type\":\"mark_read\",\"data\":{\"senderId\":\"USER_ID\"}}\n```\n\n**Get online users:**\n```json\n{\"type\":\"get_online_users\",\"data\":{}}\n```\n\n### Disconnect\nPress `Ctrl+C` to disconnect"
+          },
+          "response": []
+        },
+        {
+          "name": "Node.js Test Script",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "## Node.js Test Script\n\nCreate a file `test-websocket.js`:\n\n```javascript\nconst WebSocket = require('ws');\n\n// Replace with your actual token\nconst TOKEN = 'YOUR_JWT_TOKEN';\nconst RECEIVER_ID = 'OTHER_USER_ID';\n\nconst ws = new WebSocket(`ws://localhost:3000/ws?token=${TOKEN}`);\n\nws.on('open', () => {\n  console.log('✅ Connected');\n  \n  // Send a test message after 2 seconds\n  setTimeout(() => {\n    console.log('📤 Sending message...');\n    ws.send(JSON.stringify({\n      type: 'chat_message',\n      data: {\n        receiverId: RECEIVER_ID,\n        content: 'Hello from Node.js test!'\n      }\n    }));\n  }, 2000);\n});\n\nws.on('message', (data) => {\n  const message = JSON.parse(data.toString());\n  console.log(`📨 ${message.type}:`, JSON.stringify(message.data, null, 2));\n});\n\nws.on('close', (code, reason) => {\n  console.log(`❌ Disconnected: ${code} ${reason}`);\n});\n\nws.on('error', (error) => {\n  console.error('🔥 Error:', error.message);\n});\n\n// Keep running for 30 seconds\nsetTimeout(() => {\n  console.log('⏱️ Closing connection...');\n  ws.close();\n  process.exit(0);\n}, 30000);\n```\n\nRun:\n```bash\nnode test-websocket.js\n```"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
