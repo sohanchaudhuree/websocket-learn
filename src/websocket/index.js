@@ -140,7 +140,7 @@ const initializeWebSocket = (server) => {
       }
     } catch (error) {
       console.error('❌ Database error during authentication:', error.message);
-      sendError(ws, 'Server error during authentication.');
+      sendError(ws, 'Database connection error during authentication. Please try again later.');
       ws.close(4004, 'Server error');
       return;
     }
@@ -454,7 +454,11 @@ const handleChatMessage = async (ws, data, _wss) => {
     }
   } catch (error) {
     console.error('❌ Error saving message:', error.message);
-    sendError(ws, 'Failed to send message. Please try again.');
+    // Provide more specific error message based on error type
+    const errorMsg = error.name === 'ValidationError' 
+      ? 'Message validation failed. Content may be too long or invalid.'
+      : 'Failed to save message to database. Please try again.';
+    sendError(ws, errorMsg);
   }
 };
 
@@ -540,7 +544,10 @@ const handleMarkRead = async (ws, data) => {
     });
   } catch (error) {
     console.error('❌ Error marking messages as read:', error.message);
-    sendError(ws, 'Failed to mark messages as read.');
+    const errorMsg = error.name === 'CastError'
+      ? 'Invalid sender ID provided.'
+      : 'Database error while updating read status. Please try again.';
+    sendError(ws, errorMsg);
   }
 };
 
